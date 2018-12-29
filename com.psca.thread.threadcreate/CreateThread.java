@@ -14,5 +14,16 @@ public class CreateThread {
         System.out.println("当前线程名称为："+t1.getName());
         t1.start();
         System.out.println("线程名称为："+t1.getName());
+        Thread t2 = new Thread();
+        System.out.println(t2.getName());
+        Thread t3 = new Thread("MyThread1");
+        System.out.println(t3.getName());
+        Thread t4 = new Thread();
+        System.out.println(t3.getName().equals(t4.getName()));
+
+        /**
+         * 需要注意的是，一旦指定了自定义的线程名字，
+         * 就不会消耗默认线程名称命名规则中计数器
+         */
     }
 }
