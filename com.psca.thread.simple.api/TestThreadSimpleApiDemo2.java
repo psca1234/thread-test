@@ -9,7 +9,7 @@ import java.util.Optional;
  * @UpdateRemark: 修改内容
  * @Version: 1.0
  */
-public class TestThreadSImpleApiDemo2 {
+public class TestThreadSimpleApiDemo2 {
     public static void main(String [] args){
         Thread t1 =new Thread(()->{
             Optional.of("hello").ifPresent(System.out :: println);
