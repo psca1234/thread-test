@@ -32,5 +32,6 @@ public class TestThreadSImpleApiDemo2 {
          * world
          * 运行结果说明，人工设置线程的优先级不能真实的控制线程的执行顺序
          */
+        Optional.of(Thread.currentThread().getPriority()).ifPresent(System.out::println);
     }
 }
