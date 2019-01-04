@@ -8,16 +8,16 @@
  * @Version: 1.0
  */
 public class TestThreadService {
-    public static void main(String [] args){
+    public static void main(String[] args) {
         ThreadService threadService = new ThreadService();
-        long startTimestamp= System.currentTimeMillis();
-        threadService.execute(()->{
-            while(true){
+        long startTimestamp = System.currentTimeMillis();
+        threadService.execute(() -> {
+            while (true) {
 
             }
         });
         threadService.shutDown(10_000);
         long endTimestamp = System.currentTimeMillis();
-        System.out.printf("暴力结束线程所用时间为：%s\n",endTimestamp-startTimestamp);
+        System.out.printf("暴力结束线程所用时间为：%s\n", endTimestamp - startTimestamp);
     }
 }
