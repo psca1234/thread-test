@@ -39,11 +39,11 @@ public class TestThreadWaitAndNotify {
                 while(Controls.size() >MAX_SIZE){
                     try {
                         Controls.wait();
-                        Controls.addLast(new Control());
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
                 }
+                Controls.addLast(new Control());
             }
             Optional.of("The Thread names " + Thread.currentThread().getName()+ "is working...............").ifPresent(System.out :: println);
             try {
