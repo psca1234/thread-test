@@ -44,17 +44,17 @@ public class TestThreadWaitAndNotify {
                     }
                 }
                 Controls.addLast(new Control());
-                Optional.of("The Thread names " + Thread.currentThread().getName()+ "is working...............").ifPresent(System.out :: println);
-                try {
-                    Thread.sleep(10_000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                synchronized(Controls){
-                    Optional.of("The Thread names "+Thread.currentThread().getName()+ "is worked end ..........").ifPresent(System.out :: println);
-                    Controls.removeFirst();
-                    Controls.notifyAll();
-                }
+            }
+            Optional.of("The Thread names " + Thread.currentThread().getName()+ "is working...............").ifPresent(System.out :: println);
+            try {
+                Thread.sleep(10_000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            synchronized(Controls){
+                Optional.of("The Thread names "+Thread.currentThread().getName()+ "is worked end ..........").ifPresent(System.out :: println);
+                Controls.removeFirst();
+                Controls.notifyAll();
             }
         },name);
     }
