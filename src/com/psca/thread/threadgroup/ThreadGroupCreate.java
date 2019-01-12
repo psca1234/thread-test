@@ -1,6 +1,5 @@
 package com.psca.thread.threadgroup;
 
-import java.util.Arrays;
 import java.util.Optional;
 
 /**
