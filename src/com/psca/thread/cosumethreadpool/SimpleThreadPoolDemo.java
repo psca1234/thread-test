@@ -18,7 +18,11 @@ public class SimpleThreadPoolDemo {
 
     private final int size;
 
+    private final int queueSize;
+
     private final static int DEFAULT_SIZE=10;
+
+    private final static int DEFAULT_TASK_QUEUE_SIZE=2000;
 
     private static volatile int seq = 0;
 
@@ -30,12 +34,22 @@ public class SimpleThreadPoolDemo {
 
     private final static ArrayList<WorkerTask> THREAD_QUEUE = new ArrayList<>();
 
+    private final DiscardPolicy discardPolicy;
+
+    public final static DiscardPolicy DEFAULT_DISCARD_POLICY=()->{
+        throw new DiscardExcepton("Task has discard ...");
+    };
+
+    private boolean distory = false;
+
     public SimpleThreadPoolDemo(){
-        this(DEFAULT_SIZE);
+        this(DEFAULT_SIZE,DEFAULT_TASK_QUEUE_SIZE,DEFAULT_DISCARD_POLICY);
     }
 
-    public SimpleThreadPoolDemo(int size) {
+    public SimpleThreadPoolDemo(int size,int queueSize,DiscardPolicy discardPolicy) {
         this.size = size;
+        this.queueSize = queueSize;
+        this.discardPolicy = discardPolicy;
         init();
     }
 
@@ -47,7 +61,11 @@ public class SimpleThreadPoolDemo {
     }
 
     public void submit(Runnable runnable){
+        if(distory)
+            throw new IllegalStateException("The thread pool already destory and not allow submit");
         synchronized (TASK_QUEUE){
+            if(TASK_QUEUE.size() > queueSize)
+                discardPolicy.discard();
             TASK_QUEUE.addLast(runnable);
             TASK_QUEUE.notifyAll();
         }
@@ -59,8 +77,46 @@ public class SimpleThreadPoolDemo {
         THREAD_QUEUE.add(task);
     }
 
+    public void shutdown()throws InterruptedException{
+        while(!TASK_QUEUE.isEmpty()){
+            Thread.sleep(50);
+        }
+        int initVal = THREAD_QUEUE.size();
+        while(initVal >0){
+            for(WorkerTask workerTask :THREAD_QUEUE){
+                workerTask.interrupt();
+                workerTask.close();
+                initVal--;
+            }
+        }
+        distory = true;
+        System.out.println("The thread pool is disposed ..");
+    }
+
+    public int getSize() {
+        return size;
+    }
+
+    public int getQueueSize() {
+        return queueSize;
+    }
+
+    public boolean isDistory() {
+        return distory;
+    }
+
     private enum TaskState{
         FREE,RUNNING,BLOCK,DEAD
+    }
+
+    public static class DiscardExcepton extends RuntimeException{
+        public DiscardExcepton(String message){
+            super(message);
+        }
+    }
+
+    public interface DiscardPolicy{
+        void discard()throws DiscardExcepton;
     }
 
     private static class WorkerTask extends Thread{
@@ -83,6 +139,7 @@ public class SimpleThreadPoolDemo {
                 synchronized (TASK_QUEUE){
                     while(TASK_QUEUE.isEmpty()){
                         try {
+                            this.taskState = TaskState.BLOCK;
                             TASK_QUEUE.wait();
                         } catch (InterruptedException e) {
                             break OUTER;
@@ -105,7 +162,8 @@ public class SimpleThreadPoolDemo {
     }
 
     public static void main(String[] args) {
-        SimpleThreadPoolDemo threadPoolDemo = new SimpleThreadPoolDemo();
+        //SimpleThreadPoolDemo threadPoolDemo = new SimpleThreadPoolDemo(6,10,SimpleThreadPoolDemo.DEFAULT_DISCARD_POLICY);
+        SimpleThreadPoolDemo threadPoolDemo =new SimpleThreadPoolDemo();
         for (int i=0;i<20;i++){
             threadPoolDemo.submit(()->{
                 System.out.println("The runnable is sericed by\t"+Thread.currentThread()+"\tstart.");
@@ -117,5 +175,12 @@ public class SimpleThreadPoolDemo {
                 System.out.println("The runnable is sericed by\t"+Thread.currentThread()+"\tfinished.");
             });
         }
+        try {
+            Thread.sleep(10000);
+            threadPoolDemo.shutdown();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        System.out.println("The thread pool status is \t"+threadPoolDemo.isDistory());
     }
 }
