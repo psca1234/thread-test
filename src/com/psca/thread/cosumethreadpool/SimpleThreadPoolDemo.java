@@ -40,7 +40,7 @@ public class SimpleThreadPoolDemo {
         throw new DiscardExcepton("Task has discard ...");
     };
 
-    private boolean distory = false;
+    private volatile boolean distory = false;
 
     public SimpleThreadPoolDemo(){
         this(DEFAULT_SIZE,DEFAULT_TASK_QUEUE_SIZE,DEFAULT_DISCARD_POLICY);
