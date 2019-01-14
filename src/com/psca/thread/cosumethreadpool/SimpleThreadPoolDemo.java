@@ -1,10 +1,8 @@
 package com.psca.thread.cosumethreadpool;
 
-import javax.xml.bind.annotation.XmlType;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.stream.IntStream;
 
 /**
  * @Description: java类作用描述
@@ -228,26 +226,21 @@ public class SimpleThreadPoolDemo extends Thread{
         }
     }
 
-    public static void main(String[] args) {
-        //SimpleThreadPoolDemo threadPoolDemo = new SimpleThreadPoolDemo(6,10,SimpleThreadPoolDemo.DEFAULT_DISCARD_POLICY);
-        SimpleThreadPoolDemo threadPoolDemo =new SimpleThreadPoolDemo(4,8,12,20,SimpleThreadPoolDemo.DEFAULT_DISCARD_POLICY);
-        for (int i=0;i<20;i++){
-            threadPoolDemo.submit(()->{
-                System.out.println("The runnable is sericed by\t"+Thread.currentThread()+"\tstart.");
+    public static void main(String[] args) throws InterruptedException{
+        SimpleThreadPool threadPool = new SimpleThreadPool();
+        for (int i = 0; i < 40; i++) {
+            threadPool.submit(() -> {
+                System.out.println("The runnable  be serviced by " + Thread.currentThread() + " start.");
                 try {
-                    Thread.sleep(3_000);
+                    Thread.sleep(3000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                System.out.println("The runnable is sericed by\t"+Thread.currentThread()+"\tfinished.");
+                System.out.println("The runnable be serviced by " + Thread.currentThread() + " finished.");
             });
         }
-//        try {
-//            Thread.sleep(10000);
-//            threadPoolDemo.shutdown();
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-//        System.out.println("The thread pool status is \t"+threadPoolDemo.isDistory());
+
+        Thread.sleep(10000);
+        threadPool.shutdown();
     }
 }
