@@ -2,6 +2,7 @@ package com.psca.thread.cosumethreadpool;
 
 import javax.xml.bind.annotation.XmlType;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.stream.IntStream;
 
@@ -14,13 +15,11 @@ import java.util.stream.IntStream;
  * @UpdateRemark: 修改内容
  * @Version: 1.0
  */
-public class SimpleThreadPoolDemo {
+public class SimpleThreadPoolDemo extends Thread{
 
-    private final int size;
+    private int size;
 
     private final int queueSize;
-
-    private final static int DEFAULT_SIZE=10;
 
     private final static int DEFAULT_TASK_QUEUE_SIZE=2000;
 
@@ -42,22 +41,32 @@ public class SimpleThreadPoolDemo {
 
     private volatile boolean distory = false;
 
+    private int min;
+
+    private int max;
+
+    private int active;
+
     public SimpleThreadPoolDemo(){
-        this(DEFAULT_SIZE,DEFAULT_TASK_QUEUE_SIZE,DEFAULT_DISCARD_POLICY);
+        this(4,8,12,DEFAULT_TASK_QUEUE_SIZE,DEFAULT_DISCARD_POLICY);
     }
 
-    public SimpleThreadPoolDemo(int size,int queueSize,DiscardPolicy discardPolicy) {
-        this.size = size;
+    public SimpleThreadPoolDemo(int min,int active,int max,int queueSize,DiscardPolicy discardPolicy) {
+        this.min=min;
+        this.active = active;
+        this.max=max;
         this.queueSize = queueSize;
         this.discardPolicy = discardPolicy;
         init();
     }
 
     private void init(){
-        for (int i=0;i<size;i++){
+        for (int i=0;i<min;i++){
             createWokerTask();
         }
 
+        this.size = min;
+        this.start();
     }
 
     public void submit(Runnable runnable){
@@ -68,6 +77,50 @@ public class SimpleThreadPoolDemo {
                 discardPolicy.discard();
             TASK_QUEUE.addLast(runnable);
             TASK_QUEUE.notifyAll();
+        }
+    }
+
+    @Override
+    public void run() {
+        while(!distory){
+            System.out.printf("Pool#Min:%d,Active:%d,Max:%d,Current:%d,QueueSize:%d\n",
+                    this.min, this.active, this.max, this.size, TASK_QUEUE.size());
+            try {
+                Thread.sleep(5_000);
+                if(TASK_QUEUE.size()>active && size<active){
+                    for(int i=size;i<active;i++){
+                        createWokerTask();
+                    }
+                    System.out.println("The pool incremented to active.");
+                    size = active;
+                } else if (TASK_QUEUE.size() > max && size < max) {
+                    for (int i = size; i < max; i++) {
+                        createWokerTask();
+                    }
+                    System.out.println("The pool incremented to max.");
+                    size = max;
+                }
+
+                synchronized (THREAD_QUEUE) {
+                    if (TASK_QUEUE.isEmpty() && size > active) {
+                        System.out.println("=========Reduce========");
+                        int releaseSize = size - active;
+                        for (Iterator<WorkerTask> it = THREAD_QUEUE.iterator(); it.hasNext(); ) {
+                            if (releaseSize <= 0)
+                                break;
+
+                            WorkerTask task = it.next();
+                            task.close();
+                            task.interrupt();
+                            it.remove();
+                            releaseSize--;
+                        }
+                        size = active;
+                    }
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -89,7 +142,9 @@ public class SimpleThreadPoolDemo {
                 initVal--;
             }
         }
-        distory = true;
+        System.out.println(GROUP.activeCount());
+
+        this.distory = true;
         System.out.println("The thread pool is disposed ..");
     }
 
@@ -103,6 +158,18 @@ public class SimpleThreadPoolDemo {
 
     public boolean isDistory() {
         return distory;
+    }
+
+    public int getMin() {
+        return min;
+    }
+
+    public int getMax() {
+        return max;
+    }
+
+    public int getActive() {
+        return active;
     }
 
     private enum TaskState{
@@ -163,24 +230,24 @@ public class SimpleThreadPoolDemo {
 
     public static void main(String[] args) {
         //SimpleThreadPoolDemo threadPoolDemo = new SimpleThreadPoolDemo(6,10,SimpleThreadPoolDemo.DEFAULT_DISCARD_POLICY);
-        SimpleThreadPoolDemo threadPoolDemo =new SimpleThreadPoolDemo();
+        SimpleThreadPoolDemo threadPoolDemo =new SimpleThreadPoolDemo(4,8,12,20,SimpleThreadPoolDemo.DEFAULT_DISCARD_POLICY);
         for (int i=0;i<20;i++){
             threadPoolDemo.submit(()->{
                 System.out.println("The runnable is sericed by\t"+Thread.currentThread()+"\tstart.");
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(3_000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
                 System.out.println("The runnable is sericed by\t"+Thread.currentThread()+"\tfinished.");
             });
         }
-        try {
-            Thread.sleep(10000);
-            threadPoolDemo.shutdown();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        System.out.println("The thread pool status is \t"+threadPoolDemo.isDistory());
+//        try {
+//            Thread.sleep(10000);
+//            threadPoolDemo.shutdown();
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+//        System.out.println("The thread pool status is \t"+threadPoolDemo.isDistory());
     }
 }
